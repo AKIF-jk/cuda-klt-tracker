@@ -337,31 +337,37 @@ void _KLTSelectGoodFeatures(
   /* Create pointlist, which is a simplified version of a featurelist, */
   /* for speed.  Contains only integer locations and values. */
   pointlist = (int *) malloc(ncols * nrows * 3 * sizeof(int));
-
+  
   /* Create temporary images, etc. */
   if (mode == REPLACING_SOME && 
-      tc->sequentialMode && tc->pyramid_last != NULL)  {
+    tc->sequentialMode && tc->pyramid_last != NULL)  {
     floatimg = ((_KLT_Pyramid) tc->pyramid_last)->img[0];
     gradx = ((_KLT_Pyramid) tc->pyramid_last_gradx)->img[0];
     grady = ((_KLT_Pyramid) tc->pyramid_last_grady)->img[0];
     assert(gradx != NULL);
     assert(grady != NULL);
   } else  {
+
     floatimages_created = TRUE;
     floatimg = _KLTCreateFloatImage(ncols, nrows);
     gradx    = _KLTCreateFloatImage(ncols, nrows);
     grady    = _KLTCreateFloatImage(ncols, nrows);
+
     if (tc->smoothBeforeSelecting)  {
       _KLT_FloatImage tmpimg;
       tmpimg = _KLTCreateFloatImage(ncols, nrows);
+
       _KLTToFloatImage(img, ncols, nrows, tmpimg);
+
       _KLTComputeSmoothedImage(tmpimg, _KLTComputeSmoothSigma(tc), floatimg);
+
       _KLTFreeFloatImage(tmpimg);
     } else _KLTToFloatImage(img, ncols, nrows, floatimg);
- 
+    
     /* Compute gradient of image in x and y direction */
     _KLTComputeGradients(floatimg, tc->grad_sigma, gradx, grady);
   }
+ 
 	
   /* Write internal images */
   if (tc->writeInternalImages)  {
@@ -478,13 +484,12 @@ void KLTSelectGoodFeatures(
 {
   if (KLT_verbose >= 1)  {
     fprintf(stderr,  "(KLT) Selecting the %d best features "
-            "from a %d by %d image...  ", fl->nFeatures, ncols, nrows);
+            "from a %d by %d image...  \n", fl->nFeatures, ncols, nrows);
     fflush(stderr);
   }
 
   _KLTSelectGoodFeatures(tc, img, ncols, nrows, 
                          fl, SELECTING_ALL);
-
   if (KLT_verbose >= 1)  {
     fprintf(stderr,  "\n\t%d features found.\n", 
             KLTCountRemainingFeatures(fl));

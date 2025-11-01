@@ -5,18 +5,18 @@
 
 /* Standard includes */
 #include <assert.h>
-#include <math.h>   /* fabs() */
-#include <stdlib.h>   /* malloc() */
-#include <stdio.h>    /* fflush() */
-#include <time.h>     /* ADDED: For clock() function */
+#include <math.h>		/* fabs() */
+#include <stdlib.h>		/* malloc() */
+#include <stdio.h>		/* fflush() */
 
 /* Our includes */
 #include "base.h"
 #include "error.h"
-#include "convolve.h" /* for computing pyramid */
+#include "convolve.h"	/* for computing pyramid */
 #include "klt.h"
-#include "klt_util.h" /* _KLT_FloatImage */
-#include "pyramid.h"  /* _KLT_Pyramid */
+#include "klt_util.h"	/* _KLT_FloatImage */
+#include "pyramid.h"	/* _KLT_Pyramid */
+#include "klt_cuda_mem.h"
 
 extern int KLT_verbose;
 
@@ -24,7 +24,8 @@ typedef float *_FloatWindow;
 
 /*********************************************************************
  * _interpolate
- * * Given a point (x,y) in an image, computes the bilinear interpolated 
+ * 
+ * Given a point (x,y) in an image, computes the bilinear interpolated 
  * gray-level value of the point in the image.  
  */
 
@@ -52,8 +53,8 @@ static float _interpolate(
 
   return ( (1-ax) * (1-ay) * *ptr +
            ax   * (1-ay) * *(ptr+1) +
-           (1-ax) * ay   * *(ptr+(img->ncols)) +
-           ax   * ay   * *(ptr+(img->ncols)+1) );
+           (1-ax) *   ay   * *(ptr+(img->ncols)) +
+           ax   *   ay   * *(ptr+(img->ncols)+1) );
 }
 
 
@@ -104,7 +105,7 @@ static void _computeGradientSum(
   float x2, float y2,      /* center of window in 2nd img */
   int width, int height,   /* size of window */
   _FloatWindow gradx,      /* output */
-  _FloatWindow grady)      /* " */
+  _FloatWindow grady)      /*   " */
 {
   register int hw = width/2, hh = height/2;
   float g1, g2;
@@ -189,7 +190,7 @@ static void _computeGradientSumLightingInsensitive(
   float x2, float y2,      /* center of window in 2nd img */
   int width, int height,   /* size of window */
   _FloatWindow gradx,      /* output */
-  _FloatWindow grady)      /* " */
+  _FloatWindow grady)      /*   " */
 {
   register int hw = width/2, hh = height/2;
   float g1, g2, sum1_squared = 0, sum2_squared = 0;
@@ -247,8 +248,8 @@ static void _compute2by2GradientMatrix(
     *gyy += gy*gy;
   }
 }
-  
-  
+	
+	
 /*********************************************************************
  * _compute2by1ErrorVector
  *
@@ -283,8 +284,8 @@ static void _compute2by1ErrorVector(
  * _solveEquation
  *
  * Solves the 2x2 matrix equation
- * [gxx gxy] [dx] = [ex]
- * [gxy gyy] [dy] = [ey]
+ *         [gxx gxy] [dx] = [ex]
+ *         [gxy gyy] [dy] = [ey]
  * for dx and dy.
  *
  * Returns KLT_TRACKED on success and KLT_SMALL_DET on failure
@@ -298,7 +299,7 @@ static int _solveEquation(
 {
   float det = gxx*gyy - gxy*gxy;
 
-  
+	
   if (det < small)  return KLT_SMALL_DET;
 
   *dx = (gyy*ex - gxy*ey)/det;
@@ -310,7 +311,7 @@ static int _solveEquation(
 /*********************************************************************
  * _allocateFloatWindow
  */
-  
+	
 static _FloatWindow _allocateFloatWindow(
   int width,
   int height)
@@ -345,7 +346,7 @@ static void _printFloatWindow(
   }
 }
 */
-  
+	
 
 /*********************************************************************
  * _sumAbsFloatWindow
@@ -408,13 +409,7 @@ static int _trackFeature(
   int nr = img1->nrows;
   float one_plus_eps = 1.001f;   /* To prevent rounding errors */
 
-  /* ADDED: Time measurement variables */
-  clock_t start_diff, end_diff;
-  clock_t start_grad, end_grad;
-  double cpu_time_diff = 0.0;
-  double cpu_time_grad = 0.0;
-
-  
+	
   /* Allocate memory for windows */
   imgdiff = _allocateFloatWindow(width, height);
   gradx   = _allocateFloatWindow(width, height);
@@ -437,30 +432,21 @@ static int _trackFeature(
       _computeIntensityDifferenceLightingInsensitive(img1, img2, x1, y1, *x2, *y2, 
                                   width, height, imgdiff);
       _computeGradientSumLightingInsensitive(gradx1, grady1, gradx2, grady2, 
-        img1, img2, x1, y1, *x2, *y2, width, height, gradx, grady);
+			  img1, img2, x1, y1, *x2, *y2, width, height, gradx, grady);
     } else {
-      /* Timing for _computeIntensityDifference */
-      start_diff = clock();
       _computeIntensityDifference(img1, img2, x1, y1, *x2, *y2, 
                                   width, height, imgdiff);
-      end_diff = clock();
-      cpu_time_diff += ((double) (end_diff - start_diff)) / CLOCKS_PER_SEC;
-
-      /* Timing for _computeGradientSum */
-      start_grad = clock();
       _computeGradientSum(gradx1, grady1, gradx2, grady2, 
-        x1, y1, *x2, *y2, width, height, gradx, grady);
-      end_grad = clock();
-      cpu_time_grad += ((double) (end_grad - start_grad)) / CLOCKS_PER_SEC;
+			  x1, y1, *x2, *y2, width, height, gradx, grady);
     }
-    
+		
 
     /* Use these windows to construct matrices */
     _compute2by2GradientMatrix(gradx, grady, width, height, 
                                &gxx, &gxy, &gyy);
     _compute2by1ErrorVector(imgdiff, gradx, grady, width, height, step_factor,
                             &ex, &ey);
-        
+				
     /* Using matrices, solve equation for new displacement */
     status = _solveEquation(gxx, gxy, gyy, ex, ey, small, &dx, &dy);
     if (status == KLT_SMALL_DET)  break;
@@ -481,23 +467,11 @@ static int _trackFeature(
     if (lighting_insensitive)
       _computeIntensityDifferenceLightingInsensitive(img1, img2, x1, y1, *x2, *y2, 
                                   width, height, imgdiff);
-    else {
-      /* Final computation of difference for residue check */
-      start_diff = clock();
+    else
       _computeIntensityDifference(img1, img2, x1, y1, *x2, *y2, 
                                   width, height, imgdiff);
-      end_diff = clock();
-      cpu_time_diff += ((double) (end_diff - start_diff)) / CLOCKS_PER_SEC;
-    }
-
     if (_sumAbsFloatWindow(imgdiff, width, height)/(width*height) > max_residue) 
       status = KLT_LARGE_RESIDUE;
-  }
-  
-  /* ADDED: Print the accumulated time */
-  if (KLT_verbose) { // Assuming KLT_verbose is for debugging/logging
-      printf("Time taken by _computeIntensityDifference (total): %f seconds\n", cpu_time_diff);
-      printf("Time taken by _computeGradientSum (total): %f seconds\n", cpu_time_grad);
   }
 
   /* Free memory */
@@ -526,7 +500,8 @@ static KLT_BOOL _outOfBounds(
   return (x < borderx || x > ncols-1-borderx ||
           y < bordery || y > nrows-1-bordery );
 }
-// ... (rest of the code remains the same)
+
+
 
 
 /********************************************************************** 
@@ -1336,6 +1311,7 @@ void KLTTrackFeatures(
 	/* Do the same thing with second image */
 	floatimg2 = _KLTCreateFloatImage(ncols, nrows);
 	_KLTToFloatImage(img2, ncols, nrows, tmpimg);
+  // tmpimg->data
 	_KLTComputeSmoothedImage(tmpimg, _KLTComputeSmoothSigma(tc), floatimg2);
 	pyramid2 = _KLTCreatePyramid(ncols, nrows, (int) subsampling, tc->nPyramidLevels);
 	_KLTComputePyramid(floatimg2, pyramid2, tc->pyramid_sigma_fact);
