@@ -8,6 +8,7 @@ NVCC = nvcc
 FLAG1 = -DNDEBUG
 CFLAGS = $(FLAG1) -pg                    # <-- profiling enabled
 NVCCFLAGS = -arch=sm_86 -std=c++11 -Xcompiler "-Wno-register -pg"   # <-- profiling for CUDA
+NVCCFLAGS_T4 = -arch=sm_75 -std=c++11 -Xcompiler "-Wno-register -pg"   # <-- T4 GPU (sm_75)
 
 ######################################################################
 # Common (non-convolution) sources
@@ -31,7 +32,7 @@ LIBDIRS = -L/usr/local/lib -L/usr/lib
 
 .SUFFIXES: .c .o .cu
 
-.PHONY: all gpu cpu clean profile
+.PHONY: all gpu cpu clean profile colabGpu
 
 ######################################################################
 # Default: GPU build
@@ -61,6 +62,13 @@ convolve_gpu.o: convolve.cu
 cudaMem.o: cudaMem.cu
 	$(NVCC) -c $(NVCCFLAGS) $< -o $@
 
+# T4 GPU specific object files
+convolve_gpu_t4.o: convolve.cu
+	$(NVCC) -c $(NVCCFLAGS_T4) $< -o $@
+
+cudaMem_t4.o: cudaMem.cu
+	$(NVCC) -c $(NVCCFLAGS_T4) $< -o $@
+
 
 ######################################################################
 # Libraries
@@ -74,6 +82,13 @@ libklt_cpu.a: $(CPU_OBJS)
 	ar ruv libklt_cpu.a $(CPU_OBJS)
 	@echo "Built libklt_cpu.a"
 
+# T4 GPU library
+GPU_OBJS_T4 = $(COMMON_OBJS) convolve_gpu_t4.o cudaMem_t4.o
+libklt_gpu_t4.a: $(GPU_OBJS_T4)
+	rm -f libklt_gpu_t4.a
+	ar ruv libklt_gpu_t4.a $(GPU_OBJS_T4)
+	@echo "Built libklt_gpu_t4.a for T4 GPU (sm_75)"
+
 ######################################################################
 # Executables (link with -pg)
 example3: libklt_gpu.a
@@ -83,6 +98,12 @@ example3: libklt_gpu.a
 example3_cpu: libklt_cpu.a
 	$(CC) -pg -O3 -o example3_cpu $(EXAMPLES) libklt_cpu.a $(LIBDIRS) -lm
 	@echo "Built CPU executable: ./example3_cpu (profiling enabled)"
+
+######################################################################
+# T4 GPU build (for Google Colab and similar T4 environments)
+colabGpu: libklt_gpu_t4.a
+	$(NVCC) -pg -O3 -o example3 $(EXAMPLES) libklt_gpu_t4.a $(LIBDIRS) -lm
+	@echo "Built T4 GPU executable: ./example3 (sm_75, profiling enabled)"
 
 ######################################################################
 # Automated profiling target
@@ -97,7 +118,8 @@ profile: clean gpu
 ######################################################################
 clean:
 	rm -f *.o *.a example3 example3_cpu *.tar *.tar.gz libklt*.a \
-	      feat*.ppm features.ft features.txt gmon.out profile_report.txt
+	      feat*.ppm features.ft features.txt gmon.out profile_report.txt \
+	      *_t4.o libklt_gpu_t4.a
 
 
 
