@@ -13,7 +13,7 @@
 #include "pnmio.h"
 #include "klt.h"
 #include "klt_util.h"
-#include "klt_cuda_mem.h"
+
 
 /*********************************************************************/
 
@@ -35,22 +35,10 @@ _KLT_FloatImage _KLTCreateFloatImage(
   _KLT_FloatImage floatimg;
   int nbytes = sizeof(_KLT_FloatImageRec) +
     ncols * nrows * sizeof(float);
-  
+
   floatimg = (_KLT_FloatImage)  malloc(nbytes);
   if (floatimg == NULL)
-  KLTError("(_KLTCreateFloatImage)  Out of memory");
-  /* Allocate device buffer only when building with GPU */
-#ifndef CPU_ONLY
-  {
-    size_t data_bytes = (size_t)ncols * (size_t)nrows * sizeof(float);
-    floatimg->device_data = (float*) kltMalloc(data_bytes);
-    if (floatimg->device_data == NULL) KLTError("(_KLTCreateFloatImage)(kltMalloc error)");
-  }
-#else
-  floatimg->device_data = NULL;
-#endif
-
-
+    KLTError("(_KLTCreateFloatImage)  Out of memory");
   floatimg->ncols = ncols;
   floatimg->nrows = nrows;
   floatimg->data = (float *)  (floatimg + 1);
@@ -66,13 +54,6 @@ _KLT_FloatImage _KLTCreateFloatImage(
 void _KLTFreeFloatImage(
   _KLT_FloatImage floatimg)
 {
-  if (!floatimg) return;
-  if (floatimg->device_data) {
-#ifndef CPU_ONLY
-    kltFree(floatimg->device_data);
-#endif
-    floatimg->device_data = NULL;
-  }
   free(floatimg);
 }
 
