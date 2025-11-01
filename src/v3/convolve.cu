@@ -238,151 +238,151 @@ __global__ static void convolve_vert_kernel(
 }
 
 
-/*********************************************************************
- * _convolveImageHoriz
- */
-extern "C" void convolveImageHoriz_cuda(
-  _KLT_FloatImage imgin,
-  ConvolutionKernel kernel,
-  _KLT_FloatImage imgout)
-{
-  /* checks*/
-  assert(kernel.width % 2 == 1);
-  assert(imgin != imgout);
-  assert(imgout->ncols >= imgin->ncols);
-  assert(imgout->nrows >= imgin->nrows);
+// /*********************************************************************
+//  * _convolveImageHoriz
+//  */
+// extern "C" void convolveImageHoriz_cuda(
+//   _KLT_FloatImage imgin,
+//   ConvolutionKernel kernel,
+//   _KLT_FloatImage imgout)
+// {
+//   /* checks*/
+//   assert(kernel.width % 2 == 1);
+//   assert(imgin != imgout);
+//   assert(imgout->ncols >= imgin->ncols);
+//   assert(imgout->nrows >= imgin->nrows);
 
-  int ncols = imgin->ncols;
-  int nrows = imgin->nrows;
-  size_t npixels = (size_t)ncols * (size_t)nrows;
-  size_t bytes = npixels * sizeof(float);
-  int kwidth = kernel.width;
-  int radius = kwidth / 2;
-  size_t kernel_bytes = (size_t)kwidth * sizeof(float);
+//   int ncols = imgin->ncols;
+//   int nrows = imgin->nrows;
+//   size_t npixels = (size_t)ncols * (size_t)nrows;
+//   size_t bytes = npixels * sizeof(float);
+//   int kwidth = kernel.width;
+//   int radius = kwidth / 2;
+//   size_t kernel_bytes = (size_t)kwidth * sizeof(float);
 
-  float *d_in = nullptr;
-  float *d_out = nullptr;
-  float *d_kernel = nullptr;
-  // allocate device memory
- //  KLT_CUDA_ASSERT(cudaMalloc((void**)&d_in, bytes));
-  // KLT_CUDA_ASSERT(cudaMalloc((void**)&d_out, bytes));
-  KLT_CUDA_ASSERT(cudaMalloc((void**)&d_kernel, kernel_bytes));
+//   float *d_in = nullptr;
+//   float *d_out = nullptr;
+//   float *d_kernel = nullptr;
+//   // allocate device memory
+//  //  KLT_CUDA_ASSERT(cudaMalloc((void**)&d_in, bytes));
+//   // KLT_CUDA_ASSERT(cudaMalloc((void**)&d_out, bytes));
+//   KLT_CUDA_ASSERT(cudaMalloc((void**)&d_kernel, kernel_bytes));
 
-  // copy Host to Device
-   //KLT_CUDA_ASSERT(cudaMemcpy(d_in, imgin->data, bytes, cudaMemcpyHostToDevice));
-  KLT_CUDA_ASSERT(cudaMemcpy(d_kernel, kernel.data, kernel_bytes, cudaMemcpyHostToDevice));
+//   // copy Host to Device
+//    //KLT_CUDA_ASSERT(cudaMemcpy(d_in, imgin->data, bytes, cudaMemcpyHostToDevice));
+//   KLT_CUDA_ASSERT(cudaMemcpy(d_kernel, kernel.data, kernel_bytes, cudaMemcpyHostToDevice));
 
 
-  const int TX = 32;
-  const int TY = 8; 
-  dim3 block(TX, TY);
+//   const int TX = 32;
+//   const int TY = 8; 
+//   dim3 block(TX, TY);
  
-  dim3 grid((ncols + TX - 1) / TX, (nrows + TY - 1) / TY);
-  // launch
-  if(imgin->device_data==NULL) printf("NULL\n");
-  else printf("NOT NULL\n");
+//   dim3 grid((ncols + TX - 1) / TX, (nrows + TY - 1) / TY);
+//   // launch
+//   if(imgin->device_data==NULL) printf("NULL\n");
+//   else printf("NOT NULL\n");
  
 
-  convolve_horiz_kernel<<<grid, block>>>(imgin->device_data, imgout->device_data, ncols, nrows, d_kernel, kwidth, radius);
-  //convolve_horiz_kernel<<<grid, block>>>(d_in,d_out, ncols, nrows, d_kernel, kwidth, radius);
+//   convolve_horiz_kernel<<<grid, block>>>(imgin->device_data, imgout->device_data, ncols, nrows, d_kernel, kwidth, radius);
+//   //convolve_horiz_kernel<<<grid, block>>>(d_in,d_out, ncols, nrows, d_kernel, kwidth, radius);
 
-  // error check
-  cudaError_t err = cudaGetLastError();
-  if (err != cudaSuccess) {
-    fprintf(stderr, "convolve_horiz_kernel launch failed: %s\n", cudaGetErrorString(err));
-    // cudaFree(d_in); cudaFree(d_out); cudaFree(d_kernel);
-    abort();
-  }
-  KLT_CUDA_ASSERT(cudaDeviceSynchronize());
+//   // error check
+//   cudaError_t err = cudaGetLastError();
+//   if (err != cudaSuccess) {
+//     fprintf(stderr, "convolve_horiz_kernel launch failed: %s\n", cudaGetErrorString(err));
+//     // cudaFree(d_in); cudaFree(d_out); cudaFree(d_kernel);
+//     abort();
+//   }
+//   KLT_CUDA_ASSERT(cudaDeviceSynchronize());
 
-  // copy back
-  KLT_CUDA_ASSERT(cudaMemcpy(imgout->data,imgout->device_data, bytes, cudaMemcpyDeviceToHost));
+//   // copy back
+//   KLT_CUDA_ASSERT(cudaMemcpy(imgout->data,imgout->device_data, bytes, cudaMemcpyDeviceToHost));
 
-  // free
-  // cudaFree(d_in);
-  // cudaFree(d_out);
-  cudaFree(d_kernel);
-}
+//   // free
+//   // cudaFree(d_in);
+//   // cudaFree(d_out);
+//   cudaFree(d_kernel);
+// }
 
-extern "C" void convolveImageVert_cuda(
-  _KLT_FloatImage imgin,
-  ConvolutionKernel kernel,
-  _KLT_FloatImage imgout)
-{
-  /*  checks (same as CPU code) */
+// extern "C" void convolveImageVert_cuda(
+//   _KLT_FloatImage imgin,
+//   ConvolutionKernel kernel,
+//   _KLT_FloatImage imgout)
+// {
+//   /*  checks (same as CPU code) */
 
-  assert(kernel.width % 2 == 1);
-  assert(imgin != imgout);
-  assert(imgout->ncols >= imgin->ncols);
-  assert(imgout->nrows >= imgin->nrows);
+//   assert(kernel.width % 2 == 1);
+//   assert(imgin != imgout);
+//   assert(imgout->ncols >= imgin->ncols);
+//   assert(imgout->nrows >= imgin->nrows);
 
-  int ncols = imgin->ncols;
-  int nrows = imgin->nrows;
-  size_t npixels = (size_t)ncols * (size_t)nrows;
-  size_t bytes = npixels * sizeof(float);
-  int kwidth = kernel.width;
-  int radius = kwidth / 2;
-  size_t kernel_bytes = (size_t)kwidth * sizeof(float);
+//   int ncols = imgin->ncols;
+//   int nrows = imgin->nrows;
+//   size_t npixels = (size_t)ncols * (size_t)nrows;
+//   size_t bytes = npixels * sizeof(float);
+//   int kwidth = kernel.width;
+//   int radius = kwidth / 2;
+//   size_t kernel_bytes = (size_t)kwidth * sizeof(float);
 
-   float *d_in = nullptr;
-   float *d_out = nullptr;
-  float *d_kernel = nullptr;
+//    float *d_in = nullptr;
+//    float *d_out = nullptr;
+//   float *d_kernel = nullptr;
 
-  // allocate
-  //KLT_CUDA_ASSERT(cudaMalloc((void**)&d_in, bytes));
-  //KLT_CUDA_ASSERT(cudaMalloc((void**)&d_out, bytes));
-  KLT_CUDA_ASSERT(cudaMalloc((void**)&d_kernel, kernel_bytes));
+//   // allocate
+//   //KLT_CUDA_ASSERT(cudaMalloc((void**)&d_in, bytes));
+//   //KLT_CUDA_ASSERT(cudaMalloc((void**)&d_out, bytes));
+//   KLT_CUDA_ASSERT(cudaMalloc((void**)&d_kernel, kernel_bytes));
 
-  // copy
-   //KLT_CUDA_ASSERT(cudaMemcpy(d_in, imgin->data, bytes, cudaMemcpyHostToDevice));
-  KLT_CUDA_ASSERT(cudaMemcpy(d_kernel, kernel.data, kernel_bytes, cudaMemcpyHostToDevice));
-
-  
-  const int TX = 32; 
-  const int TY = 8;  
-  dim3 block(TX, TY);
-  dim3 grid((ncols + TX - 1) / TX, (nrows + TY - 1) / TY);
+//   // copy
+//    //KLT_CUDA_ASSERT(cudaMemcpy(d_in, imgin->data, bytes, cudaMemcpyHostToDevice));
+//   KLT_CUDA_ASSERT(cudaMemcpy(d_kernel, kernel.data, kernel_bytes, cudaMemcpyHostToDevice));
 
   
-  cudaEvent_t start, stop;
-  KLT_CUDA_ASSERT(cudaEventCreate(&start));
-  KLT_CUDA_ASSERT(cudaEventCreate(&stop));
-  KLT_CUDA_ASSERT(cudaEventRecord(start));
+//   const int TX = 32; 
+//   const int TY = 8;  
+//   dim3 block(TX, TY);
+//   dim3 grid((ncols + TX - 1) / TX, (nrows + TY - 1) / TY);
 
-  if(imgin->device_data==NULL) printf("NULL\n");
   
-  convolve_vert_kernel<<<grid, block>>>(imgin->device_data, imgout->device_data, ncols, nrows, d_kernel, kwidth, radius);
+//   cudaEvent_t start, stop;
+//   KLT_CUDA_ASSERT(cudaEventCreate(&start));
+//   KLT_CUDA_ASSERT(cudaEventCreate(&stop));
+//   KLT_CUDA_ASSERT(cudaEventRecord(start));
 
-  // check error
-  cudaError_t err = cudaGetLastError();
-  if (err != cudaSuccess) {
-    fprintf(stderr, "convolve_vert_kernel launch failed: %s\n", cudaGetErrorString(err));
-    // cudaFree(d_in); cudaFree(d_out); cudaFree(d_kernel);
-    cudaEventDestroy(start); cudaEventDestroy(stop);
-    abort();
-  }
+//   if(imgin->device_data==NULL) printf("NULL\n");
+  
+//   convolve_vert_kernel<<<grid, block>>>(imgin->device_data, imgout->device_data, ncols, nrows, d_kernel, kwidth, radius);
 
-  KLT_CUDA_ASSERT(cudaEventRecord(stop));
-  KLT_CUDA_ASSERT(cudaEventSynchronize(stop));
+//   // check error
+//   cudaError_t err = cudaGetLastError();
+//   if (err != cudaSuccess) {
+//     fprintf(stderr, "convolve_vert_kernel launch failed: %s\n", cudaGetErrorString(err));
+//     // cudaFree(d_in); cudaFree(d_out); cudaFree(d_kernel);
+//     cudaEventDestroy(start); cudaEventDestroy(stop);
+//     abort();
+//   }
 
-  float milliseconds = 0.0f;
-  KLT_CUDA_ASSERT(cudaEventElapsedTime(&milliseconds, start, stop));
-  // For debug timings, uncomment this:
-  // printf("convolve_vert_kernel time: %.3f ms\n", milliseconds);
+//   KLT_CUDA_ASSERT(cudaEventRecord(stop));
+//   KLT_CUDA_ASSERT(cudaEventSynchronize(stop));
 
-  KLT_CUDA_ASSERT(cudaEventDestroy(start));
-  KLT_CUDA_ASSERT(cudaEventDestroy(stop));
+//   float milliseconds = 0.0f;
+//   KLT_CUDA_ASSERT(cudaEventElapsedTime(&milliseconds, start, stop));
+//   // For debug timings, uncomment this:
+//   // printf("convolve_vert_kernel time: %.3f ms\n", milliseconds);
 
-  KLT_CUDA_ASSERT(cudaDeviceSynchronize());
+//   KLT_CUDA_ASSERT(cudaEventDestroy(start));
+//   KLT_CUDA_ASSERT(cudaEventDestroy(stop));
 
-  // copy back
-  KLT_CUDA_ASSERT(cudaMemcpy(imgout->data, imgout->device_data, bytes, cudaMemcpyDeviceToHost));
+//   KLT_CUDA_ASSERT(cudaDeviceSynchronize());
 
-  // free
-  // cudaFree(d_in);
-  // cudaFree(d_out);
-  cudaFree(d_kernel);
-}
+//   // copy back
+//   KLT_CUDA_ASSERT(cudaMemcpy(imgout->data, imgout->device_data, bytes, cudaMemcpyDeviceToHost));
+
+//   // free
+//   // cudaFree(d_in);
+//   // cudaFree(d_out);
+//   cudaFree(d_kernel);
+// }
 
 /*********************************************************************
  * _convolveSeparate
