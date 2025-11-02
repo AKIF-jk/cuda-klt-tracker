@@ -331,10 +331,10 @@ void ppmWriteFileRGB(
   fclose(fp);
 }
 
-void KLT_CopyHostToDeviceFloatImage(_KLT_FloatImage img) {
-  size_t bytes = img->ncols * img->nrows * sizeof(float);
-  kltMemcpyHostToDevice(img->device_data, img->data, bytes);
-  //cudaMemcpy(img->device_data, img->data, bytes, cudaMemcpyHostToDevice);
-}
+// void KLT_CopyHostToDeviceFloatImage(_KLT_FloatImage img) {
+//   size_t bytes = img->ncols * img->nrows * sizeof(float);
+//   kltMemcpyHostToDevice(img->device_data, img->data, bytes);
+//   //cudaMemcpy(img->device_data, img->data, bytes, cudaMemcpyHostToDevice);
+// }
 
 
