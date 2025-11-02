@@ -24,8 +24,8 @@ CPU_OBJS = $(COMMON_OBJS) convolve_cpu.o
 
 ######################################################################
 # GPU-only
-GPU_SRCS = $(COMMON_ARCH) convolve.cu cudaMem.cu
-GPU_OBJS = $(COMMON_OBJS) convolve_gpu.o cudaMem.o
+GPU_SRCS = $(COMMON_ARCH) convolve.cu klt_cuda_mem.cu
+GPU_OBJS = $(COMMON_OBJS) convolve_gpu.o klt_cuda_mem.o
 
 EXAMPLES = example3.c
 LIBDIRS = -L/usr/local/lib -L/usr/lib
@@ -59,14 +59,14 @@ trackFeatures_cpu.o: trackFeatures.c
 convolve_gpu.o: convolve.cu
 	$(NVCC) -c $(NVCCFLAGS) $< -o $@
 
-cudaMem.o: cudaMem.cu
+cudaMem.o: klt_cuda_mem.cu
 	$(NVCC) -c $(NVCCFLAGS) $< -o $@
 
 # T4 GPU specific object files
 convolve_gpu_t4.o: convolve.cu
 	$(NVCC) -c $(NVCCFLAGS_T4) $< -o $@
 
-cudaMem_t4.o: cudaMem.cu
+cudaMem_t4.o: klt_cuda_mem.cu
 	$(NVCC) -c $(NVCCFLAGS_T4) $< -o $@
 
 
