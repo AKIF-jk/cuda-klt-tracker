@@ -58,7 +58,9 @@ int main()
     total_timeTracKFeature+=elapsed;
     //printf("Iteration %d time: %.3f ms\n", i, elapsed);
 
+    #ifdef REPLACE
     KLTReplaceLostFeatures(tc, img2, ncols, nrows, fl);
+#endif
     KLTStoreFeatureList(fl, ft, i);
     sprintf(fnameout, "sample/feat%d.pgm", i);
     KLTWriteFeatureListToPPM(fl, img2, ncols, nrows, fnameout);
