@@ -9,6 +9,7 @@ typedef struct  {
   int ncols;
   int nrows;
   float *data;
+  float *device_data; // CUDA device data
 }  _KLT_FloatImageRec, *_KLT_FloatImage;
 
 _KLT_FloatImage _KLTCreateFloatImage(

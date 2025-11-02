@@ -13,6 +13,7 @@
 #include "pnmio.h"
 #include "klt.h"
 #include "klt_util.h"
+#include "klt_cuda_mem.h"
 
 
 /*********************************************************************/
@@ -42,7 +43,11 @@ _KLT_FloatImage _KLTCreateFloatImage(
   floatimg->ncols = ncols;
   floatimg->nrows = nrows;
   floatimg->data = (float *)  (floatimg + 1);
-
+  // Allocate CUDA memory
+  // if (cudaMalloc((void**)&floatimg->device_data, ncols * nrows * sizeof(float)) != cudaSuccess) {
+  //   KLTError("(_KLTCreateFloatImage) cudaMalloc failed");
+  // }
+  floatimg->device_data = kltMalloc(ncols * nrows * sizeof(float));
   return(floatimg);
 }
 
@@ -54,7 +59,13 @@ _KLT_FloatImage _KLTCreateFloatImage(
 void _KLTFreeFloatImage(
   _KLT_FloatImage floatimg)
 {
-  free(floatimg);
+  if (floatimg) {
+    if (floatimg->device_data) {
+      kltFree(floatimg->device_data);
+      floatimg->device_data = NULL;
+    }
+    free(floatimg);
+  }
 }
 
 

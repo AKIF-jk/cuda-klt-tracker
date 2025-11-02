@@ -415,8 +415,23 @@ static void _convolveSeparate(
     cap_bytes = bytes;
   }
 
+  // Use persistent device_data from _KLT_FloatImage to avoid extra memcpy
+  float *d_in_cuda = imgin->device_data;
+  if (!d_in_cuda) {
+    // fallback for legacy path: allocate and copy host to device (should not happen)
+    printf("Allocating legacy d_in\n");
+    static float *legacy_d_in = NULL;
+    if (bytes > cap_bytes) {
+      if (legacy_d_in) { cudaFree(legacy_d_in); }
+      cudaMalloc((void**)&legacy_d_in, bytes);
+      cap_bytes = bytes;
+    }
+    cudaMemcpy(legacy_d_in, imgin->data, bytes, cudaMemcpyHostToDevice);
+    d_in_cuda = legacy_d_in;
+  }
+
   /* Always upload current frame; host buffers may be reused with new contents across frames */
-  KLT_CUDA_ASSERT(cudaMemcpy(d_in, imgin->data, bytes, cudaMemcpyHostToDevice));
+  // KLT_CUDA_ASSERT(cudaMemcpy(d_in, imgin->data, bytes, cudaMemcpyHostToDevice)); // This line is now redundant
 
   float *d_kernel = NULL;
   KLT_CUDA_ASSERT(cudaMalloc((void**)&d_kernel, (size_t)MAX_KERNEL_WIDTH * sizeof(float)));
@@ -434,7 +449,7 @@ static void _convolveSeparate(
   /* Horizontal pass */
   KLT_CUDA_ASSERT(cudaMemcpy(d_kernel, horiz_kernel.data, (size_t)horiz_kernel.width * sizeof(float), cudaMemcpyHostToDevice));
   KLT_CUDA_ASSERT(cudaEventRecord(start));
-  convolve_horiz_kernel<<<grid, block>>>(d_in, d_tmp, ncols, nrows, d_kernel, horiz_kernel.width, horiz_kernel.width / 2);
+  convolve_horiz_kernel<<<grid, block>>>(d_in_cuda, d_tmp, ncols, nrows, d_kernel, horiz_kernel.width, horiz_kernel.width / 2);
   KLT_CUDA_ASSERT(cudaGetLastError());
   KLT_CUDA_ASSERT(cudaEventRecord(end));
   KLT_CUDA_ASSERT(cudaEventSynchronize(end));

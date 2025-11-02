@@ -8,6 +8,7 @@
 /* Standard includes */
 #include <stdio.h>   /* FILE  */
 #include <stdlib.h>  /* malloc(), atoi() */
+#include <cuda_runtime.h>
 
 /* Our includes */
 #include "error.h"
@@ -328,6 +329,11 @@ void ppmWriteFileRGB(
 
   /* Close file */
   fclose(fp);
+}
+
+void KLT_CopyHostToDeviceFloatImage(_KLT_FloatImage img) {
+  size_t bytes = img->ncols * img->nrows * sizeof(float);
+  cudaMemcpy(img->device_data, img->data, bytes, cudaMemcpyHostToDevice);
 }
 
 
