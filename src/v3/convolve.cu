@@ -66,7 +66,7 @@ void _KLTToFloatImage(
 
   while (img < ptrend)  *ptrout++ = (float) *img++;
   /* No device copy here; device IO is handled inside GPU convolution functions */
-  
+  kltMemcpyHostToDevice(floatimg->device_data, floatimg->data, ncols * nrows * sizeof(float));
 }
 
 
