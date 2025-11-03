@@ -25,7 +25,7 @@ typedef struct  {
 static ConvolutionKernel gauss_kernel;
 static ConvolutionKernel gaussderiv_kernel;
 static float sigma_last = -10.0;
-
+static double total_time = 0.0f;
 
 /*********************************************************************
  * _KLTToFloatImage
@@ -210,7 +210,7 @@ static void _convolveImageVert(
   assert(imgout->nrows >= imgin->nrows);
 
   /* For each column, do ... */
-  printf("\nncols %d , nrows %d", ncols,nrows);
+  //printf("\nncols %d , nrows %d", ncols,nrows);
   int sum2 =0;
   for (i = 0 ; i < ncols ; i++)  {
 
@@ -242,7 +242,7 @@ static void _convolveImageVert(
     ptrcol++;
     ptrout -= nrows * ncols - 1;
   }
-  printf("sum2: %d" ,sum2);
+ // printf("sum2: %d" ,sum2);
 }
 
 
@@ -278,10 +278,9 @@ static void _convolveSeparate(
 
   timeHoriz = diff_ms(t1, t2);
   timeVert  = diff_ms(t2, t3);
-
-  printf("Time (Horizontal): %.3f ms\n", timeHoriz);
-  printf("Time (Vertical):   %.3f ms\n", timeVert);
-  printf("Total Conv Time:   %.3f ms\n", timeHoriz + timeVert);
+  total_time += timeHoriz;
+  total_time += timeVert;
+  printf("Total Conv Time:   %.3f ms\n", total_time);
 
   _KLTFreeFloatImage(tmpimg);
 }
@@ -333,6 +332,6 @@ void _KLTComputeSmoothedImage(
 
   _convolveSeparate(img, gauss_kernel, gauss_kernel, smooth);
 }
-
+s
 
 

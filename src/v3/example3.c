@@ -26,7 +26,7 @@ int main()
   KLT_TrackingContext tc;
   KLT_FeatureList fl;
   KLT_FeatureTable ft;
-  int nFeatures = 5000, nFrames = 20;
+  int nFeatures = 5000, nFrames = 100;
   int ncols, nrows;
   int i;
 
@@ -45,7 +45,7 @@ int main()
   
   KLTSelectGoodFeatures(tc, img1, ncols, nrows, fl);
   KLTStoreFeatureList(fl, ft, 0);
-  KLTWriteFeatureListToPPM(fl, img1, ncols, nrows, "sample/feat0.pgm");
+  //KLTWriteFeatureListToPPM(fl, img1, ncols, nrows, "sample/feat0.pgm");
   for (i = 1 ; i < nFrames ; i++)  {
     
     sprintf(fnamein, "../klt/sample/frame_%03d.pgm", i);
@@ -58,12 +58,12 @@ int main()
     total_timeTracKFeature+=elapsed;
     //printf("Iteration %d time: %.3f ms\n", i, elapsed);
 
-    #ifdef REPLACE
+#ifdef REPLACE
     KLTReplaceLostFeatures(tc, img2, ncols, nrows, fl);
 #endif
     KLTStoreFeatureList(fl, ft, i);
     sprintf(fnameout, "sample/feat%d.pgm", i);
-    KLTWriteFeatureListToPPM(fl, img2, ncols, nrows, fnameout);
+    //KLTWriteFeatureListToPPM(fl, img2, ncols, nrows, fnameout);
 
   }
   KLTWriteFeatureTable(ft, "sample/features.txt", "%5.1f");
